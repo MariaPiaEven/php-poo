@@ -1,5 +1,5 @@
 
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
 
 <div class="form-group">
   <label class="col-form-label mt-4" for="titre">Titre</label>
@@ -17,6 +17,7 @@
 </div>
 
     <input name="valider" class="btn btn-primary mt-5" type="submit" value="Ajouter l'article">
+    <a href="<?= Conf::URL ?>article/liste" class="btn btn-primary">Retour</a>
 
     
 <form>

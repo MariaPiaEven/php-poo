@@ -2,6 +2,7 @@
 <?php
 include('Autoloader.php');
 Autoloader::start();
+
 // new ArticleControleur();
 
 // include('controleur/ArticleControleur.php');
@@ -15,10 +16,22 @@ $partiesChemin = explode("/", $chemin);
 
 // var_dump($partiesChemin);
 
-// uppercasse first pour mettre la premier lettre en majuscule
-$nomControleur = "controleur\\" .ucfirst($partiesChemin[0])."Controleur";//ex:article
+// si l'utilisateur a fourni la premiere partie de l'url (le controleur)
+if(isset($partiesChemin[0]) && $partiesChemin[0] != ""){
+   // uppercasse first pour mettre la premier lettre en majuscule
+    $nomControleur = "controleur\\" .ucfirst($partiesChemin[0])."Controleur";//ex:controleur/ArticleControleur
+}else{
+    $nomControleur = "controleur\\ArticleControleur";
+}
 
-$nomAction = $partiesChemin[1];//ex:liste
+// si l'utilisateur a fourni la seconde partie de l'url (l'action)
+//sinon l'action sera liste par defaut
+if(isset($partiesChemin[1]) && $partiesChemin[1] != ""){
+    $nomAction = $partiesChemin[1];//ex:liste
+ }else{
+    $nomAction = "liste";
+ }
+
 
 //si l'urlcomporte un parametre, et que celle-ci finit pas par un slash
 //ex: localhost/article/afficher/42

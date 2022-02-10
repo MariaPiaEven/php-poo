@@ -2,19 +2,19 @@
 
 class Personne 
 {
-    private $nom;
-    private $prenom;
+    protected $nom;
+    protected $prenom;
 
-    function __construct($nom, $prenom = "root")
+    public function __construct($nom, $prenom)
     {
         $this->setNom=$nom;
         $this->prenom=$prenom;
     }
     
-    function nomComplet() 
-    {
-        echo "Je m'appele " . $this->prenom . " " . $this->nom;
-    }
+    // function nomComplet() 
+    // {
+    //     echo "Je m'appele " . $this->prenom . " " . $this->nom;
+    // }
     /**
      * Get the value of nom
      */ 
