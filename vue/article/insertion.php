@@ -17,7 +17,7 @@
 </div>
 
     <input name="valider" class="btn btn-primary mt-5" type="submit" value="Ajouter l'article">
-    <a href="<?= Conf::URL ?>article/liste" class="btn btn-primary">Retour</a>
+    <a href="<?= Conf::URL ?>article/liste" class="btn btn-primary mt-5">Retour</a>
 
     
 <form>

@@ -4,7 +4,7 @@ class PDOperso extends PDO {
 
     function __construct(
         $host = 'localhost',
-        $dbname = 'php_poo', 
+        $dbname = 'cci_2022',  //php-poo
         $user = 'root', 
         $pwd = '',
         $port = 3306){

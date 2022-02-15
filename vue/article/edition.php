@@ -1,4 +1,4 @@
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
 
     <div class="form-group">
         <label class="col-form-label mt-4" for="titre">Titre</label>
@@ -7,16 +7,27 @@
 
     <div class="form-group">
         <label for="contenu" class="form-label mt-4">Contenu</label>
-        <textarea value="<?= $article['contenu'] ?>" name="contenu" class="form-control" id="contenu" rows="3"></textarea>
+        <textarea name="contenu" class="form-control" id="contenu" rows="3"><?= $article['contenu'] ?></textarea>
     </div>
+
+    <?php
+    if ($article["nom_image"] != null && $article["nom_image"] != ""){
+        ?>
+            <img style="max-width: 300px" src="<?= Conf :: URL ?>assets/images/<?= $article["nom_image"] ?>">
+            <button name="suppression_image" type="submit" class="btn btn-danger">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        <?php
+    }
+        ?>
 
     <div class="form-group">
         <label for="image" class="form-label mt-4">Image</label>
-        <input value="<?= $article['nom_image'] ?>" name="image" class="form-control" type="file" id="image">
+        <input name="image" class="form-control" type="file" id="image">
     </div>
 
-    <input name="valider" class="btn btn-primary mt-5" type="submit" value="Ajouter l'article">
+    <input name="valider" class="btn btn-primary mt-5" type="submit" value="Enregistrer">
+    <a href="<?= Conf::URL ?>article/liste/" class="btn btn-primary mt-5">Annuler</a>
 
 </form>
 
-<a href="<?= Conf::URL ?>article/liste/" class="btn btn-primary">Retour</a>
