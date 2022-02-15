@@ -176,7 +176,16 @@ class ArticleControleur extends BaseControleur
 
     public function recherche()
     {
+        $connexion = new PDOperso();
 
-        
+        $requete = $connexion->prepare(
+            "SELECT * FROM article WHERE (titre LIKE :recherche OR contenu LIKE :recherche)"
+        );
+
+        $requete->execute([':recherche' => '%' .$_POST['recherche'].'%']);
+
+        $listeArticle = $requete->fetchAll();
+
+        var_dump($listeArticle);
     }
 }

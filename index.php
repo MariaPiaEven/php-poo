@@ -119,7 +119,7 @@ $controleur = new $nomControleur();
         ?>
       
       </ul>
-      <form class="d-flex" action="<?= Conf::URL?>article/recherche">
+      <form method="POST" class="d-flex" action="<?= Conf::URL?>article/recherche">
         <input name="recherche" class="form-control me-sm-2" type="text" placeholder="Titre, contenu, article">
         <button class="btn btn-secondary my-2 my-sm-0" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
       </form>
