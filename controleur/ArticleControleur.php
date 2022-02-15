@@ -186,6 +186,8 @@ class ArticleControleur extends BaseControleur
 
         $listeArticle = $requete->fetchAll();
 
-        var_dump($listeArticle);
+        $parametres = compact('listeArticle');
+
+        $this->afficherVue($parametres, 'liste');
     }
 }
