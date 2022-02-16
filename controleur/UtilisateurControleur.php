@@ -17,11 +17,9 @@ class UtilisateurControleur extends BaseControleur {
 
         // $this->afficherVue('listeUtilisateur');
         $this->afficherVue($parametres);
-
     }
 
     public function connexion(){
-
 
         $erreurPseudo = false;
 
@@ -29,7 +27,13 @@ class UtilisateurControleur extends BaseControleur {
         if(isset($_POST['valider'])){
 
             $connexion = new PDOperso();
-            $requete = $connexion->prepare("SELECT * FROM utilisateur WHERE pseudo = ?");
+
+            $requete = $connexion->prepare(
+                "SELECT * 
+                FROM utilisateur 
+                JOIN droit ON droit.id = utilisateur.id_droit
+                WHERE pseudo = ?");
+
             $requete->execute([
                 $_POST['pseudo']
             ]);
@@ -43,7 +47,7 @@ class UtilisateurControleur extends BaseControleur {
 
                         $_SESSION['id'] = $utilisateur['id'];
                         $_SESSION['pseudo'] = $utilisateur['pseudo'];
-                        $_SESSION['admin'] = $utilisateur['admin'];
+                        $_SESSION['droit'] = $utilisateur['denomination'];
 
                         header("Location: " . Conf::URL);
 

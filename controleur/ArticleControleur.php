@@ -13,8 +13,14 @@ class ArticleControleur extends BaseControleur
         $connexion = new \PDOperso();
 
         //etoile ce pour recuperer tous les colonnes de la bdd
-        $requete = $connexion->prepare("SELECT * FROM article");
+        $requete = $connexion->prepare(
+            "SELECT article.id as id, titre, contenu, date_publication, nom_image, pseudo, id_utilisateur
+            FROM article
+            JOIN utilisateur ON utilisateur.id = article.id_utilisateur"
+        );
+
         $requete->execute();
+
         $listeArticle = $requete->fetchAll(); //fetch ce pour lire les resultats de PDO (php data objet) pour acceder a la base de donnes
 
         $parametres = compact('listeArticle');
@@ -28,9 +34,10 @@ class ArticleControleur extends BaseControleur
         include("bdd.php");
 
         $requete = $connexion->prepare(
-            "SELECT *
+            "SELECT article.id as id, titre, contenu, date_publication,nom_image, pseudo
              FROM article
-             WHERE id = ?"
+             JOIN utilisateur ON utilisateur.id = article.id_utilisateur
+             WHERE article.id = ?"
         );
         //  echo "<h1>Affichage d'un article $id</h1>";
 
@@ -39,8 +46,23 @@ class ArticleControleur extends BaseControleur
         $article = $requete->fetch();
 
         if ($article) {
+
+            // On recupère toutes les categories de cet article
+            $requete = $connexion->prepare(
+                "SELECT * 
+                FROM categorie_article 
+                JOIN categorie ON categorie.id = categorie_article.id_categorie
+                WHERE id_article = ?
+            "
+            );
+
+            $requete->execute([$id]);
+
+            $listeCategorie = $requete->fetchAll();
+
             // include('vue/afficher.php');
-            $parametres = compact('article');
+            $parametres = compact('article', 'listeCategorie');
+
             $this->afficherVue($parametres, "afficher");
         } else {
             header('Location: ' . \Conf::URL . 'page/pageNonTrouve');
@@ -68,14 +90,15 @@ class ArticleControleur extends BaseControleur
             include('bdd.php');
 
             $requete = $connexion->prepare(
-                "INSERT INTO article (titre,contenu,nom_image)
-                     VALUES (?,?,?)"
+                "INSERT INTO article (titre,contenu,nom_image,id_utilisateur)
+                VALUES (?,?,?,?)"
             );
 
             $requete->execute([
                 $_POST['titre'],
                 $_POST['contenu'],
-                $nouveauNom
+                $nouveauNom,
+                $_SESSION['id']
             ]);
 
             header('Location: ' . \Conf::URL . '/article/liste');
@@ -85,109 +108,138 @@ class ArticleControleur extends BaseControleur
         $this->afficherVue([], 'insertion');
     }
 
-    public function supprimer($id)
+    public function supprimer($parametre)
     {
+        if (isset($_SESSION["id"])) {
 
-        include 'bdd.php';
+            $connexion = new PDOperso();
 
-        $supprimer = $connexion->prepare('DELETE FROM article WHERE id = ?');
+            $requete = $connexion->prepare("SELECT * FROM article WHERE id= ?");
 
-        $supprimer->execute([$id]);
+            $requete->execute([$parametre]);
 
-        header('Location: ' . \Conf::URL . 'article/liste');
+            $article = $requete->fetch();
+
+            if ($_SESSION['droit'] == 'admin' || $_SESSION['id'] == $article["id_utilisateur"]) {
+
+                include 'bdd.php';
+
+                $supprimer = $connexion->prepare('DELETE FROM article WHERE id = ?');
+
+                $supprimer->execute([$parametre]);
+
+                header('Location: ' . \Conf::URL . 'article/liste');
+            } else {
+                header('Location: ' . \Conf::URL);
+            }
+        }
     }
 
     public function edition($id)
     {
 
-        $connexion = new PDOperso();
-
-        if (isset($_POST['valider'])) {
-
-            $nouveauNom = null;
-
-
-            if ($_FILES['image']['tmp_name'] != "") {
-                // name input  //par default
-                $nomTemporaire = $_FILES['image']['tmp_name'];
-
-
-                $nouveauNom = "image_" . str_replace(' ', '_', $_POST['titre']) . ".jpg";
-
-                move_uploaded_file($nomTemporaire, "./assets/images/" . $nouveauNom);
-            }
-
-            if($nouveauNom == null){
-                $requete = $connexion->prepare(
-                    'UPDATE article 
-                    SET titre = :titre, 
-                    contenu = :contenu
-                    WHERE id = :id'
-                );
-
-                $requete->execute([
-                        ':titre' => $_POST['titre'],
-                        ':contenu' => $_POST['contenu'],
-                        ':id' => $id
-                    ]);
-            }   else {
-                $requete = $connexion->prepare(
-                    'UPDATE article 
-                    SET titre = :titre, 
-                    contenu = :contenu,
-                    nom_image = :nom_image
-                    WHERE id = :id'
-                );
-
-                $requete->execute([
-                        ':titre' => $_POST['titre'],
-                        ':contenu' => $_POST['contenu'],
-                        ':nom_image' => $nouveauNom,
-                        ':id' => $id
-                    ]);
-            }
-
-            header('Location: ' . Conf::URL . 'article/afficher/' . $id);
-        } else if (isset($_POST['suppression_image'])) {
+        if (isset($_SESSION["id"])) {
 
             $connexion = new PDOperso();
+            $requete = $connexion->prepare('SELECT * FROM article WHERE id = ?');
+            $requete->execute([$id]);
 
-            $requete = $connexion->prepare(
-                'UPDATE article SET titre = :titre, contenu = :contenu, nom_image = NULL WHERE id = :id'
-            );
+            $article = $requete->fetch();
 
-            $requete->execute([
-                    ':titre' => $_POST['titre'],
-                    ':contenu' => $_POST['contenu'],
-                    ':id' => $id
-                ]);
+            if ($_SESSION['droit'] == 'admin' || $_SESSION['id'] == $article["id_utilisateur"]) {
 
-            header('Location: ' . Conf::URL . 'article/edition/' . $id);
+                if (isset($_POST['valider'])) {
+
+                    $nouveauNom = null;
+
+                    if ($_FILES['image']['tmp_name'] != "") {
+                        // name input  //par default
+                        $nomTemporaire = $_FILES['image']['tmp_name'];
+
+                        $nouveauNom = "image_" . str_replace(' ', '_', $_POST['titre']) . ".jpg";
+
+                        move_uploaded_file($nomTemporaire, "./assets/images/" . $nouveauNom);
+                    }
+
+                    if ($nouveauNom == null) {
+                        $requete = $connexion->prepare(
+                            'UPDATE article 
+                        SET titre = :titre, 
+                        contenu = :contenu
+                        WHERE id = :id'
+                        );
+
+                        $requete->execute([
+                            ':titre' => $_POST['titre'],
+                            ':contenu' => $_POST['contenu'],
+                            ':id' => $id
+                        ]);
+                    } else {
+                        $requete = $connexion->prepare(
+                            'UPDATE article 
+                        SET titre = :titre, 
+                        contenu = :contenu,
+                        nom_image = :nom_image
+                        WHERE id = :id'
+                        );
+
+                        $requete->execute([
+                            ':titre' => $_POST['titre'],
+                            ':contenu' => $_POST['contenu'],
+                            ':nom_image' => $nouveauNom,
+                            ':id' => $id
+                        ]);
+                    }
+
+                    header('Location: ' . Conf::URL . 'article/afficher/' . $id);
+                } else if (isset($_POST['suppression_image'])) {
+
+                    $connexion = new PDOperso();
+
+                    $requete = $connexion->prepare(
+                        'UPDATE article SET titre = :titre, contenu = :contenu, nom_image = NULL WHERE id = :id'
+                    );
+
+                    $requete->execute([
+                        ':titre' => $_POST['titre'],
+                        ':contenu' => $_POST['contenu'],
+                        ':id' => $id
+                    ]);
+
+                    header('Location: ' . Conf::URL . 'article/edition/' . $id);
+                }
+
+                $parametres = compact('article');
+
+                $this->afficherVue($parametres, 'edition');
+            } else {
+                header('Location: ' . Conf::URL);
+            }
+        } else {
+            header('Location: ' . Conf::URL);
         }
-
-        $requete = $connexion->prepare('SELECT * FROM article WHERE id = ?');
-        $requete->execute([$id]);
-
-        $article = $requete->fetch();
-        $parametres = compact('article');
-
-        $this->afficherVue($parametres, 'edition');
     }
 
-    public function recherche()
+    public function recherche($mot)
     {
         $connexion = new PDOperso();
 
         $requete = $connexion->prepare(
-            "SELECT * FROM article WHERE (titre LIKE :recherche OR contenu LIKE :recherche)"
+            "SELECT article.id as id, titre, contenu, date_publication,nom_image, pseudo, admin
+            FROM article 
+            JOIN utilisateur ON utilisateur.id = article.id_utilisateur
+            WHERE titre LIKE :recherche 
+            OR contenu LIKE :recherche
+            OR pseudo LIKe :recherche
+            "
         );
 
-        $requete->execute([':recherche' => '%' .$_POST['recherche'].'%']);
+        $requete->execute([':recherche' => '%' . $mot . '%']);
 
         $listeArticle = $requete->fetchAll();
 
         $parametres = compact('listeArticle');
 
-        $this->afficherVue($parametres, 'liste');
+        $this->afficherVue($parametres);
     }
 }

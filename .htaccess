@@ -1,5 +1,5 @@
-#localhost/article/liste -> localhost/index.php?chemin=article/liste
+#localhost/article/liste/parametre=1 -> localhost/index.php?chemin=article/liste/parametre=1
 
 RewriteEngine On
 
-RewriteRule ^([a-zA-Z0-9\-\/\_]*)$ index.php?chemin=$1
+RewriteRule ^([a-zA-Z0-9\-\/\_\?\=]*)$ index.php?chemin=$1/%{QUERY_STRING}

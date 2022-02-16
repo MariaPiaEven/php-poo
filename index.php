@@ -6,18 +6,15 @@ session_start();
 include('Autoloader.php');
 Autoloader::start();
 
-// new ArticleControleur();
+                              // System MVC pour organiser les fichier
 
+// new ArticleControleur();
 // include('controleur/ArticleControleur.php');
 // include('controleur/PageControleur.php');
 
-// System MVC pour organiser les fichier
-
 // ex: http://localhost/php-poo/index.php?chemin=article/liste/afficher/42
-$chemin = $_GET['chemin'];
+$chemin = str_replace("/parametre=","/", $_GET['chemin']);
 $partiesChemin = explode("/", $chemin);
-
-// var_dump($partiesChemin);
 
 // si l'utilisateur a fourni la premiere partie de l'url (le controleur)
 if(isset($partiesChemin[0]) && $partiesChemin[0] != ""){
@@ -119,8 +116,8 @@ $controleur = new $nomControleur();
         ?>
       
       </ul>
-      <form method="POST" class="d-flex" action="<?= Conf::URL?>article/recherche">
-        <input name="recherche" class="form-control me-sm-2" type="text" placeholder="Titre, contenu, article">
+      <form method="GET" class="d-flex" action="<?= Conf::URL?>article/recherche">
+        <input name="parametre" class="form-control me-sm-2" type="text" placeholder="Titre, contenu, article">
         <button class="btn btn-secondary my-2 my-sm-0" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
       </form>
     </div>
