@@ -71,6 +71,11 @@ class ArticleControleur extends BaseControleur
 
     public function insertion()
     {
+
+        if(isset($_SESSION['droit'])) {
+
+            if($_SESSION['droit']== "admin" || $_SESSION['droit'] == "redacteur"){
+
         //Si l'utilisateur a validé le formulaire
         if (isset($_POST['valider'])) {
 
@@ -106,6 +111,8 @@ class ArticleControleur extends BaseControleur
 
         // include('vue/insertion.php');
         $this->afficherVue([], 'insertion');
+            }
+        }
     }
 
     public function supprimer($parametre)

@@ -10,9 +10,16 @@ class UtilisateurControleur extends BaseControleur {
     public function liste(){
         $connexion = new \PDOperso();
 
-        $requete = $connexion->prepare("SELECT * FROM utilisateur");
+        $requete = $connexion->prepare(
+            "SELECT *
+             FROM utilisateur
+             LEFT JOIN droit ON utilisateur.id_droit = droit_id
+             "
+        );
+
         $requete ->execute();
         $listeUtilisateur = $requete->fetchAll(); 
+
         $parametres = compact('listeUtilisateur');
 
         // $this->afficherVue('listeUtilisateur');
@@ -31,7 +38,7 @@ class UtilisateurControleur extends BaseControleur {
             $requete = $connexion->prepare(
                 "SELECT * 
                 FROM utilisateur 
-                JOIN droit ON droit.id = utilisateur.id_droit
+                LEFT JOIN droit ON droit.id = utilisateur.id_droit
                 WHERE pseudo = ?");
 
             $requete->execute([
