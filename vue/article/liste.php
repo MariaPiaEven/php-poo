@@ -3,13 +3,16 @@
   <div class="d-flex justify-content-center">
   
   <?php
-    if(isset($_SESSION['pseudo'])) {
+    if(isset($_SESSION['droit'])) {
+
+      if($_SESSION['droit']== "admin" || $_SESSION['droit'] == "redacteur"){
   ?>
 
     <a href="<?= Conf::URL ?>article/insertion" class="btn btn-primary m-3">Ajouter un article</a>
 
   <?php
     }
+  }
   ?>
 
   </div>
