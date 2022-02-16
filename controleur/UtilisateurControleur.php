@@ -13,7 +13,7 @@ class UtilisateurControleur extends BaseControleur {
         $requete = $connexion->prepare(
             "SELECT *
              FROM utilisateur
-             LEFT JOIN droit ON utilisateur.id_droit = droit_id
+             LEFT JOIN droit ON utilisateur.id_droit = droit.id
              "
         );
 
