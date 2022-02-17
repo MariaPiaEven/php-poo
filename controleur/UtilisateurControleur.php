@@ -11,7 +11,7 @@ class UtilisateurControleur extends BaseControleur {
         $connexion = new \PDOperso();
 
         $requete = $connexion->prepare(
-            "SELECT *
+            "SELECT utilisateur.id as id, pseudo, denomination
              FROM utilisateur
              LEFT JOIN droit ON utilisateur.id_droit = droit.id
              "
@@ -105,11 +105,66 @@ class UtilisateurControleur extends BaseControleur {
         $this->afficherVue($parametres,'inscription');
     }
 
+    //edition utilisateur
+    public function edition($id)
+    {
+        $connexion = new PDOperso();
+
+        $requete = $connexion->prepare(
+            "SELECT utilisateur.id as id, pseudo, denomination
+            FROM utilisateur 
+            LEFT JOIN droit ON droit.id = utilisateur.id_droit
+            WHERE utilisateur.id = ?"
+            );
+
+        $requete->execute([$id]);
+
+        $utilisateur = $requete->fetch(); 
+       
+        $parametres = compact('utilisateur');
+
+        $this->afficherVue($parametres,'edition');
+    }
+
+     //supprimer utilisateur
+     public function supprimer($id)
+     {
+        if (isset($_SESSION["id"])) {
+         $connexion = new PDOperso();
+ 
+        //  $requete = $connexion->prepare(
+        //      "SELECT utilisateur.id as id, pseudo, denomination
+        //      FROM utilisateur 
+        //      LEFT JOIN droit ON droit.id = utilisateur.id_droit
+        //      WHERE utilisateur.id = ?"
+        //      );
+ 
+        //  $requete->execute([$id]);
+ 
+        //  $user = $requete->fetch(); 
+                
+            if ($_SESSION['droit'] == 'admin'){
+
+                include 'bdd.php';
+
+                $supprimer = $connexion->prepare(
+                    "DELETE FROM utilisateur 
+                     WHERE id = ?"
+                );
+
+                $supprimer->execute([$id]);
+
+                header('Location: ' . \Conf::URL . 'utilisateur/liste/');
+            } 
+        }
+     }
+
     public function deconnexion()
     {
         session_destroy();
         header("Location: " . Conf::URL);
     }
+
 
 }
 
