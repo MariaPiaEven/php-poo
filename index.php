@@ -1,4 +1,5 @@
 
+<!-- System MVC pour organiser les fichier -->
 <?php
 
 session_start();
@@ -6,11 +7,6 @@ session_start();
 include('Autoloader.php');
 Autoloader::start();
 
-                              // System MVC pour organiser les fichier
-
-// new ArticleControleur();
-// include('controleur/ArticleControleur.php');
-// include('controleur/PageControleur.php');
 
 // ex: http://localhost/php-poo/index.php?chemin=article/liste/afficher/42
 $chemin = str_replace("/parametre=","/", $_GET['chemin']);
@@ -32,8 +28,7 @@ if(isset($partiesChemin[1]) && $partiesChemin[1] != ""){
     $nomAction = "liste";
  }
 
-
-//si l'urlcomporte un parametre, et que celle-ci finit pas par un slash
+//si l'url comporte un parametre, et que celle-ci finit pas par un slash
 //ex: localhost/article/afficher/42
 //note : localhost/article/afficher/ ne marche pas.
 if(isset($partiesChemin[2]) && $partiesChemin[2] !=""){
@@ -51,16 +46,6 @@ if(!method_exists($nomControleur, $nomAction)){
 
 $controleur = new $nomControleur();
 
-//article -> ArticleControlleur
-
-// if($nomControlleur == "article"){
-//     $controlleur = new ArticleControlleur();
-
-//     if($nomAction=="liste"){
-//         $controlleur->liste();
-//     }
-
-// }
 
 ?>
 
@@ -113,7 +98,19 @@ $controleur = new $nomControleur();
           </li>
         <?php
         }
+
+        if(isset($_SESSION['droit'])
+         && ($_SESSION['droit'] == "admin" || $_SESSION['droit'] == "redacteur")
+        
+        ){
         ?>
+
+          <li class="nav-item">
+            <a class="nav-link" href="<?= Conf::URL ?>utilisateur">Gestion utilisateurs</a>
+          </li>
+
+      <?php } ?>
+
       </ul>
 
       <?php 

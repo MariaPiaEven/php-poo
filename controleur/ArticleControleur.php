@@ -16,7 +16,7 @@ class ArticleControleur extends BaseControleur
         $requete = $connexion->prepare(
             "SELECT article.id as id, titre, contenu, date_publication, nom_image, pseudo, id_utilisateur
             FROM article
-            JOIN utilisateur ON utilisateur.id = article.id_utilisateur"
+            LEFT JOIN utilisateur ON utilisateur.id = article.id_utilisateur"
         );
 
         $requete->execute();
@@ -106,7 +106,7 @@ class ArticleControleur extends BaseControleur
                 $_SESSION['id']
             ]);
 
-            header('Location: ' . \Conf::URL . '/article/liste');
+            header('Location: ' . \Conf::URL . 'article/liste');
         }
 
         // include('vue/insertion.php');

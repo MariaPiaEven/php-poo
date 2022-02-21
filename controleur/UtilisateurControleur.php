@@ -5,33 +5,45 @@ namespace controleur;
 use Conf;
 use PDOperso;
 
-class UtilisateurControleur extends BaseControleur {
+class UtilisateurControleur extends BaseControleur
+{
 
-    public function liste(){
-        $connexion = new \PDOperso();
+    public function liste()
+    {
 
-        $requete = $connexion->prepare(
-            "SELECT utilisateur.id as id, pseudo, denomination
+        //if(isset($_SESSION['droit'])&& in_array($_SESSION['droit'],["administrateur","redacteur"]))
+        if (
+            isset($_SESSION['droit'])
+            && ($_SESSION['droit'] == "admin" || $_SESSION['droit'] == "redacteur")
+        ) {
+
+            $connexion = new \PDOperso();
+
+            $requete = $connexion->prepare(
+                "SELECT utilisateur.id as id, pseudo, denomination
              FROM utilisateur
              LEFT JOIN droit ON utilisateur.id_droit = droit.id
              "
-        );
+            );
+            $requete->execute();
+            $listeUtilisateur = $requete->fetchAll();
 
-        $requete ->execute();
-        $listeUtilisateur = $requete->fetchAll(); 
+            $parametres = compact('listeUtilisateur');
 
-        $parametres = compact('listeUtilisateur');
-
-        // $this->afficherVue('listeUtilisateur');
-        $this->afficherVue($parametres);
+            // $this->afficherVue('listeUtilisateur');
+            $this->afficherVue($parametres);
+        } else {
+            header("Location: " . Conf::URL);
+        }
     }
 
-    public function connexion(){
+    public function connexion()
+    {
 
         $erreurPseudo = false;
 
         //si l'utilisateur valide la connexion
-        if(isset($_POST['valider'])){
+        if (isset($_POST['valider'])) {
 
             $connexion = new PDOperso();
 
@@ -39,58 +51,59 @@ class UtilisateurControleur extends BaseControleur {
                 "SELECT * 
                 FROM utilisateur 
                 LEFT JOIN droit ON droit.id = utilisateur.id_droit
-                WHERE pseudo = ?");
+                WHERE pseudo = ?"
+            );
 
             $requete->execute([
                 $_POST['pseudo']
             ]);
             // on récupére l'utilisateur ayant le pseudo saisi
             $utilisateur = $requete->fetch();
-        
+
             //si l'utilisateur existe bien
-            if($utilisateur){
+            if ($utilisateur) {
                 //si l'utilisateur a saisi un mot de passe compatible avec le mot passe crypte
-                if(password_verify($_POST['mot_de_passe'],$utilisateur['mot_de_passe'])){
+                if (password_verify($_POST['mot_de_passe'], $utilisateur['mot_de_passe'])) {
 
-                        $_SESSION['id'] = $utilisateur['id'];
-                        $_SESSION['pseudo'] = $utilisateur['pseudo'];
-                        $_SESSION['droit'] = $utilisateur['denomination'];
+                    $_SESSION['id'] = $utilisateur['id'];
+                    $_SESSION['pseudo'] = $utilisateur['pseudo'];
+                    $_SESSION['droit'] = $utilisateur['denomination'];
 
-                        header("Location: " . Conf::URL);
-
-                }else {
-                        //si l'utilisateur a saisi un mauvais mot de passe
-                        $erreurPseudo = true;
-                }
-            }else{
-                      //si l'utilisateur a saisi un mauvais Pseudo
+                    header("Location: " . Conf::URL);
+                } else {
+                    //si l'utilisateur a saisi un mauvais mot de passe
                     $erreurPseudo = true;
+                }
+            } else {
+                //si l'utilisateur a saisi un mauvais Pseudo
+                $erreurPseudo = true;
             }
-            
         }
 
         $parametres = compact('erreurPseudo');
 
-        $this->afficherVue($parametres,'connexion');
+        $this->afficherVue($parametres, 'connexion');
     }
 
-    public function inscription(){
+    public function inscription()
+    {
 
         $erreurLongueurPseudo = false;
         $erreurMotdePasseIdentique = false;
 
-        if(isset($_POST["valider"])){
- 
-            if(strlen($_POST["pseudo"])<5){
+        if (isset($_POST["valider"])) {
+
+            if (strlen($_POST["pseudo"]) < 5) {
                 $erreurLongueurPseudo = true;
-            } else if ($_POST['mot_de_passe'] != $_POST['confirmer_mot_de_passe']){
+            } else if ($_POST['mot_de_passe'] != $_POST['confirmer_mot_de_passe']) {
                 $erreurMotdePasseIdentique = true;
             } else {
 
                 $connexion = new PDOperso();
-                $requete= $connexion->prepare(
-                    'INSERT INTO utilisateur (pseudo, mot_de_passe) VALUES (?,?)');
-                
+                $requete = $connexion->prepare(
+                    'INSERT INTO utilisateur (pseudo, mot_de_passe) VALUES (?,?)'
+                );
+
                 $requete->execute([
                     $_POST['pseudo'],
                     password_hash($_POST['mot_de_passe'], PASSWORD_BCRYPT)
@@ -102,70 +115,75 @@ class UtilisateurControleur extends BaseControleur {
 
         $parametres = compact('erreurLongueurPseudo', 'erreurMotdePasseIdentique');
 
-        $this->afficherVue($parametres,'inscription');
+        $this->afficherVue($parametres, 'inscription');
     }
 
     //edition utilisateur
     public function edition($id)
     {
-        $connexion = new PDOperso();
+        if (isset($_SESSION['droit']) && ($_SESSION['droit'] == "admin")) {
 
-        $requete = $connexion->prepare(
-            "SELECT utilisateur.id as id, pseudo, denomination
-            FROM utilisateur 
-            LEFT JOIN droit ON droit.id = utilisateur.id_droit
-            WHERE utilisateur.id = ?"
+            //recuperation des droits
+            $connexion = new PDOperso();
+
+            $requete = $connexion->prepare(
+                "SELECT * FROM droit"
             );
 
-        $requete->execute([$id]);
+            $requete->execute();
+            $listeDroit = $requete->fetchAll();
 
-        $utilisateur = $requete->fetch(); 
-       
-        $parametres = compact('utilisateur');
+            //recuperation de l'utilisateur
+            $requete = $connexion->prepare(
+                "SELECT *
+                FROM utilisateur
+                WHERE id = ?"
+            );
 
-        $this->afficherVue($parametres,'edition');
+            $requete->execute([$id]);
+            $utilisateur = $requete->fetch();
+   
+            $parametres = compact('utilisateur','listeDroit');
+
+            $this->afficherVue($parametres, 'edition');
+        }else{
+            header('Location: ' . \Conf::URL);
+        }
     }
 
-     //supprimer utilisateur
-     public function supprimer($id)
-     {
-        if (isset($_SESSION["id"])) {
-         $connexion = new PDOperso();
- 
-        //  $requete = $connexion->prepare(
-        //      "SELECT utilisateur.id as id, pseudo, denomination
-        //      FROM utilisateur 
-        //      LEFT JOIN droit ON droit.id = utilisateur.id_droit
-        //      WHERE utilisateur.id = ?"
-        //      );
- 
-        //  $requete->execute([$id]);
- 
-        //  $user = $requete->fetch(); 
-                
-            if ($_SESSION['droit'] == 'admin'){
+    //supprimer utilisateur
+    public function supprimer($id)
+    {
+        if (isset($_SESSION['droit']) && ($_SESSION['droit'] == "admin")) {
+            $connexion = new PDOperso();
 
-                include 'bdd.php';
+            //  $requete = $connexion->prepare(
+            //       "DELETE 
+            //        FROM utilisateur 
+            //        WHERE id = ?"
+            //      );
 
-                $supprimer = $connexion->prepare(
-                    "DELETE FROM utilisateur 
-                     WHERE id = ?"
-                );
+            //  $requete->execute([$id]);
 
-                $supprimer->execute([$id]);
+            include 'bdd.php';
 
-                header('Location: ' . \Conf::URL . 'utilisateur/liste/');
-            } 
+            $supprimer = $connexion->prepare(
+                "DELETE 
+                 FROM utilisateur 
+                 WHERE id = ?"
+            );
+
+            $supprimer->execute([$id]);
+
+            header('Location: ' . \Conf::URL . 'utilisateur/liste/');
+        } else {
+            header('Location: ' . \Conf::URL);
         }
-     }
+    }
 
     public function deconnexion()
     {
         session_destroy();
         header("Location: " . Conf::URL);
     }
-
-
 }
-
-?>
