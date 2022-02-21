@@ -72,12 +72,22 @@ class ArticleControleur extends BaseControleur
     public function insertion()
     {
 
+        $erreurDoublon = false;
+
         if(isset($_SESSION['droit'])) {
 
             if($_SESSION['droit']== "admin" || $_SESSION['droit'] == "redacteur"){
 
         //Si l'utilisateur a validé le formulaire
         if (isset($_POST['valider'])) {
+
+            include('bdd.php');
+
+            $requete = $connexion->prepare("SELECT * FROM article WHERE titre = ?");
+            $requete->execute([$_POST['titre']]);
+            $doublon = $requete->fetch();
+
+            if(!$doublon){
 
             $nouveauNom = NULL;
 
@@ -92,8 +102,6 @@ class ArticleControleur extends BaseControleur
                 move_uploaded_file($nomTemporaire, "./assets/images/" . $nouveauNom);
             }
 
-            include('bdd.php');
-
             $requete = $connexion->prepare(
                 "INSERT INTO article (titre,contenu,nom_image,id_utilisateur)
                 VALUES (?,?,?,?)"
@@ -107,10 +115,15 @@ class ArticleControleur extends BaseControleur
             ]);
 
             header('Location: ' . \Conf::URL . 'article/liste');
+
+            }else{
+                $erreurDoublon = true;
+            }
         }
 
+        $parametres = compact('erreurDoublon');
         // include('vue/insertion.php');
-        $this->afficherVue([], 'insertion');
+        $this->afficherVue($parametres, 'insertion');
             }
         }
     }

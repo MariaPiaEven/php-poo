@@ -48,7 +48,7 @@ class UtilisateurControleur extends BaseControleur
             $connexion = new PDOperso();
 
             $requete = $connexion->prepare(
-                "SELECT * 
+                "SELECT utilisateur.id , pseudo , mot_de_passe , denomination
                 FROM utilisateur 
                 LEFT JOIN droit ON droit.id = utilisateur.id_droit
                 WHERE pseudo = ?"
@@ -123,11 +123,28 @@ class UtilisateurControleur extends BaseControleur
     {
         if (isset($_SESSION['droit']) && ($_SESSION['droit'] == "admin")) {
 
-            //recuperation des droits
             $connexion = new PDOperso();
 
+            //l'utilisateur a validé le formulaire
+            if (isset($_POST['valider'])) {
+
+                $requete = $connexion->prepare(
+                    "UPDATE utilisateur
+                    SET pseudo = ? , id_droit = ?
+                    WHERE id = ?"
+                );
+
+                $requete->execute([
+                    $_POST['pseudo'],
+                    $_POST['droit'] == "" ? null : $_POST['droit'], //opérateur (ternaire) conditionnel 
+                    $id
+                ]);
+            }
+
+            //recuperation des droits
             $requete = $connexion->prepare(
-                "SELECT * FROM droit"
+                "SELECT * 
+                FROM droit"
             );
 
             $requete->execute();
@@ -142,11 +159,11 @@ class UtilisateurControleur extends BaseControleur
 
             $requete->execute([$id]);
             $utilisateur = $requete->fetch();
-   
-            $parametres = compact('utilisateur','listeDroit');
+
+            $parametres = compact('utilisateur', 'listeDroit');
 
             $this->afficherVue($parametres, 'edition');
-        }else{
+        } else {
             header('Location: ' . \Conf::URL);
         }
     }

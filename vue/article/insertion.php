@@ -6,6 +6,13 @@
   <input name="titre" type="text" class="form-control" placeholder="Titre de l'article" id="inputDefault">
 </div>
 
+<?php
+
+if($erreurDoublon){
+?>
+<p class="text-danger">Ce titre existe déjà</p>
+<?php } ?>
+
 <div class="form-group">
     <label for="contenu" class="form-label mt-4">Contenu</label>
     <textarea name="contenu" class="form-control" id="contenu" rows="3"></textarea>
