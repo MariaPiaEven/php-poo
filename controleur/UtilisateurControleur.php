@@ -3,6 +3,7 @@
 namespace controleur;
 
 use Conf;
+use modele\UtilisateurModele;
 use PDOperso;
 
 class UtilisateurControleur extends BaseControleur
@@ -172,25 +173,9 @@ class UtilisateurControleur extends BaseControleur
     public function supprimer($id)
     {
         if (isset($_SESSION['droit']) && ($_SESSION['droit'] == "admin")) {
-            $connexion = new PDOperso();
 
-            //  $requete = $connexion->prepare(
-            //       "DELETE 
-            //        FROM utilisateur 
-            //        WHERE id = ?"
-            //      );
-
-            //  $requete->execute([$id]);
-
-            include 'bdd.php';
-
-            $supprimer = $connexion->prepare(
-                "DELETE 
-                 FROM utilisateur 
-                 WHERE id = ?"
-            );
-
-            $supprimer->execute([$id]);
+            UtilisateurModele::deleteById($id);
+      
 
             header('Location: ' . \Conf::URL . 'utilisateur/liste/');
         } else {

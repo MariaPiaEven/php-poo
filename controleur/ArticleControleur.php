@@ -5,6 +5,7 @@ namespace controleur;
 
 use PDOperso;
 use Conf;
+use modele\CategorieModele;
 
 class ArticleControleur extends BaseControleur
 {
@@ -78,13 +79,7 @@ class ArticleControleur extends BaseControleur
 
             if ($_SESSION['droit'] == "admin" || $_SESSION['droit'] == "redacteur") {
 
-                $requete = $connexion->prepare(
-                    "SELECT * 
-                    FROM categorie"
-                );
-
-                $requete->execute();
-                $listeCategorie = $requete->fetchAll();
+                $listeCategorie = CategorieModele::findAll();
 
                 //Si l'utilisateur a validé le formulaire
                 if (isset($_POST['valider'])) {
