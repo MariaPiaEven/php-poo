@@ -1,5 +1,5 @@
 
-<!-- System MVC pour organiser les fichier -->
+<!-- System MVC Modèle-vue-contrôleur pour organiser les fichier -->
 <?php
 
 session_start();

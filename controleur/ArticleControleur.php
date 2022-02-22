@@ -71,59 +71,74 @@ class ArticleControleur extends BaseControleur
 
     public function insertion()
     {
-
+        include('bdd.php');
         $erreurDoublon = false;
 
-        if(isset($_SESSION['droit'])) {
+        if (isset($_SESSION['droit'])) {
 
-            if($_SESSION['droit']== "admin" || $_SESSION['droit'] == "redacteur"){
+            if ($_SESSION['droit'] == "admin" || $_SESSION['droit'] == "redacteur") {
 
-        //Si l'utilisateur a validé le formulaire
-        if (isset($_POST['valider'])) {
+                $requete = $connexion->prepare(
+                    "SELECT * 
+                    FROM categorie"
+                );
 
-            include('bdd.php');
+                $requete->execute();
+                $listeCategorie = $requete->fetchAll();
 
-            $requete = $connexion->prepare("SELECT * FROM article WHERE titre = ?");
-            $requete->execute([$_POST['titre']]);
-            $doublon = $requete->fetch();
+                //Si l'utilisateur a validé le formulaire
+                if (isset($_POST['valider'])) {
 
-            if(!$doublon){
+                    $requete = $connexion->prepare("SELECT * FROM article WHERE titre = ?");
+                    $requete->execute([$_POST['titre']]);
+                    $doublon = $requete->fetch();
 
-            $nouveauNom = NULL;
+                    if (!$doublon) {
 
-            //Si l'utilisateur a selectionné une image
-            if ($_FILES['image']['tmp_name'] != "") {
-                // name input  //par default
-                $nomTemporaire = $_FILES['image']['tmp_name'];
+                        $nouveauNom = NULL;
 
-                //on créait (on crée) un nom unique a partir du titre de l'article
-                $nouveauNom = "image_" . str_replace(' ', '_', $_POST['titre']) . ".jpg";
+                        //Si l'utilisateur a selectionné une image
+                        if ($_FILES['image']['tmp_name'] != "") {
+                            // name input  //par default
+                            $nomTemporaire = $_FILES['image']['tmp_name'];
 
-                move_uploaded_file($nomTemporaire, "./assets/images/" . $nouveauNom);
-            }
+                            //on créait (on crée) un nom unique a partir du titre de l'article
+                            $nouveauNom = "image_" . str_replace(' ', '_', $_POST['titre']) . ".jpg";
 
-            $requete = $connexion->prepare(
-                "INSERT INTO article (titre,contenu,nom_image,id_utilisateur)
-                VALUES (?,?,?,?)"
-            );
+                            move_uploaded_file($nomTemporaire, "./assets/images/" . $nouveauNom);
+                        }
 
-            $requete->execute([
-                $_POST['titre'],
-                $_POST['contenu'],
-                $nouveauNom,
-                $_SESSION['id']
-            ]);
+                        $requete = $connexion->prepare(
+                            "INSERT INTO article (titre,contenu,nom_image,id_utilisateur)
+                            VALUES (?,?,?,?)"
+                        );
 
-            header('Location: ' . \Conf::URL . 'article/liste');
+                        $requete->execute([
+                            $_POST['titre'],
+                            $_POST['contenu'],
+                            $nouveauNom,
+                            $_SESSION['id']
+                        ]);
 
-            }else{
-                $erreurDoublon = true;
-            }
-        }
+                        $idArticle = $connexion->lastInsertId();
 
-        $parametres = compact('erreurDoublon');
-        // include('vue/insertion.php');
-        $this->afficherVue($parametres, 'insertion');
+                        foreach ($_POST['categorie'] as $idCategorie) {
+                            $requete = $connexion->prepare(
+                                "INSERT INTO categorie_article (id_article,id_categorie) VALUES (?,?)"
+                            );
+
+                            $requete->execute([$idArticle, $idCategorie]);
+                        }
+
+                        header('Location: ' . \Conf::URL . 'article/liste');
+                    } else {
+                        $erreurDoublon = true;
+                    }
+                }
+
+                $parametres = compact('erreurDoublon', 'listeCategorie');
+                // include('vue/insertion.php');
+                $this->afficherVue($parametres, 'insertion');
             }
         }
     }
@@ -157,79 +172,150 @@ class ArticleControleur extends BaseControleur
 
     public function edition($id)
     {
-
+        //si l'utilisateur est connecté
         if (isset($_SESSION["id"])) {
 
             $connexion = new PDOperso();
+
+            //on recupere l'article a modifier
             $requete = $connexion->prepare('SELECT * FROM article WHERE id = ?');
             $requete->execute([$id]);
-
             $article = $requete->fetch();
 
+            //on recupere les categories de l'article
+            $requete = $connexion->prepare(
+                "SELECT * 
+                FROM categorie_article
+                WHERE id_article = ?"
+            );
+            $requete->execute([$id]);
+            $listeCategorieArticle = $requete->fetchAll();
+
+            $listeIdCategorieArticle = [];
+
+            foreach ($listeCategorieArticle as $categorieArticle) {
+                array_push($listeIdCategorieArticle, $categorieArticle['id_categorie']);
+            }
+
+
+            //on recupere la liste des categories
+            $requete = $connexion->prepare("SELECT * FROM categorie");
+            $requete->execute();
+            $listeCategorie = $requete->fetchAll();
+
+
+            //si l'utilisateur est administrateur ou auteur de l'article
             if ($_SESSION['droit'] == 'admin' || $_SESSION['id'] == $article["id_utilisateur"]) {
 
-                if (isset($_POST['valider'])) {
+                $erreurDoublon = false;
 
-                    $nouveauNom = null;
-
-                    if ($_FILES['image']['tmp_name'] != "") {
-                        // name input  //par default
-                        $nomTemporaire = $_FILES['image']['tmp_name'];
-
-                        $nouveauNom = "image_" . str_replace(' ', '_', $_POST['titre']) . ".jpg";
-
-                        move_uploaded_file($nomTemporaire, "./assets/images/" . $nouveauNom);
-                    }
-
-                    if ($nouveauNom == null) {
-                        $requete = $connexion->prepare(
-                            'UPDATE article 
-                        SET titre = :titre, 
-                        contenu = :contenu
-                        WHERE id = :id'
-                        );
-
-                        $requete->execute([
-                            ':titre' => $_POST['titre'],
-                            ':contenu' => $_POST['contenu'],
-                            ':id' => $id
-                        ]);
-                    } else {
-                        $requete = $connexion->prepare(
-                            'UPDATE article 
-                        SET titre = :titre, 
-                        contenu = :contenu,
-                        nom_image = :nom_image
-                        WHERE id = :id'
-                        );
-
-                        $requete->execute([
-                            ':titre' => $_POST['titre'],
-                            ':contenu' => $_POST['contenu'],
-                            ':nom_image' => $nouveauNom,
-                            ':id' => $id
-                        ]);
-                    }
-
-                    header('Location: ' . Conf::URL . 'article/afficher/' . $id);
-                } else if (isset($_POST['suppression_image'])) {
-
-                    $connexion = new PDOperso();
-
+                //si il validé le formulaire ou si il supprime l'image
+                if (isset($_POST['valider']) || isset($_POST['suppression_image'])) {
                     $requete = $connexion->prepare(
-                        'UPDATE article SET titre = :titre, contenu = :contenu, nom_image = NULL WHERE id = :id'
+                        "SELECT * 
+                        FROM article 
+                        WHERE titre = ?
+                        AND id != ?"
                     );
 
-                    $requete->execute([
-                        ':titre' => $_POST['titre'],
-                        ':contenu' => $_POST['contenu'],
-                        ':id' => $id
-                    ]);
+                    $requete->execute([$_POST['titre'], $id]);
+                    $doublon = $requete->fetch();
 
-                    header('Location: ' . Conf::URL . 'article/edition/' . $id);
+                    //si le titre n'existe pas dejà
+                    if (!$doublon) {
+
+                        if (isset($_POST['valider'])) {
+
+                            $nouveauNom = null;
+
+                            if ($_FILES['image']['tmp_name'] != "") {
+                                // name input  //par default
+                                $nomTemporaire = $_FILES['image']['tmp_name'];
+
+                                $nouveauNom = "image_" . str_replace(' ', '_', $_POST['titre']) . "_" . time() . ".jpg";
+
+                                move_uploaded_file($nomTemporaire, "./assets/images/" . $nouveauNom);
+                            }
+
+                            if ($nouveauNom == null) {
+
+
+                                $requete = $connexion->prepare(
+                                    'UPDATE article 
+                                    SET titre = :titre, 
+                                    contenu = :contenu
+                                    WHERE id = :id'
+                                );
+
+                                $requete->execute([
+                                    ':titre' => $_POST['titre'],
+                                    ':contenu' => $_POST['contenu'], 
+                                    ':id' => $id
+                                ]);
+
+                            } else {
+                                $requete = $connexion->prepare(
+                                        'UPDATE article 
+                                        SET titre = :titre, 
+                                        contenu = :contenu,
+                                        nom_image = :nom_image
+                                        WHERE id = :id'
+                                );
+
+                                $requete->execute([
+                                    ':titre' => $_POST['titre'],
+                                    ':contenu' => $_POST['contenu'],
+                                    ':nom_image' => $nouveauNom,
+                                    ':id' => $id
+                                ]);
+                            }
+
+                            header('Location: ' . Conf::URL . 'article/afficher/' . $id);
+                        } else if (isset($_POST['suppression_image'])) {
+
+                            $connexion = new PDOperso();
+
+                            $requete = $connexion->prepare(
+                                'UPDATE article SET titre = :titre, contenu = :contenu, nom_image = NULL WHERE id = :id'
+                            );
+
+                            $requete->execute([
+                                ':titre' => $_POST['titre'],
+                                ':contenu' => $_POST['contenu'],
+                                ':id' => $id
+                            ]);
+
+                            header('Location: ' . Conf::URL . 'article/edition/' . $id);
+                        }
+                    } else {
+                        $erreurDoublon = true;
+                    }
+
+                    //on efface toutes les categories de cet article
+                    $requete = $connexion->prepare(
+                        "DELETE
+                        FROM categorie_article
+                        WHERE id_article = ?"
+                    );
+
+                    $requete->execute([$id]);
+
+                    //enregistrer les categories
+                    foreach ($_POST['categorie'] as $idCategorie) {
+                        $requete = $connexion->prepare(
+                            "INSERT INTO categorie_article (id_article,id_categorie) VALUES (?,?)"
+                        );
+
+                        $requete->execute([$id, $idCategorie]);
+                    }
                 }
 
-                $parametres = compact('article');
+                $parametres = compact(
+                    'article',
+                    'erreurDoublon',
+                    'listeCategorie',
+                    'listeIdCategorieArticle'
+                );
 
                 $this->afficherVue($parametres, 'edition');
             } else {

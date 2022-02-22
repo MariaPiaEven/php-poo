@@ -33,8 +33,33 @@
         <input name="image" class="form-control" type="file" id="image">
     </div>
 
-    <input name="valider" class="btn btn-primary mt-5" type="submit" value="Enregistrer">
-    <a href="<?= Conf::URL ?>article/liste/" class="btn btn-primary mt-5">Annuler</a>
+    <?php
+
+
+    foreach ($listeCategorie as $categorie) {
+
+        //verifier si l'id de cette categorie fait partie des categories selectionnes dans listeCategorieArticle
+
+        /*$selectionne = false;
+
+        foreach($listeCategorieArticle as $categorieArticle){
+            if($categorieArticle["id_categorie"] == $categorie["id"]){
+                $selectionne = true;
+            }
+
+        }*/
+    ?>
+        <div class="form-check mt-2">
+            <input <?php if (in_array($categorie["id"],$listeIdCategorieArticle)) echo "checked" ?> name="categorie[]" class="form-check-input" type="checkbox" value="<?= $categorie['id'] ?>" id="flexCheckDefault">
+            <label class="form-check-label" for="flexCheckDefault">
+                <?= $categorie['nom'] ?>
+            </label>
+
+        </div>
+    <?php } ?>
+
+    <input name="valider" class="btn btn-primary mt-2" type="submit" value="Enregistrer">
+    <a href="<?= Conf::URL ?>article/liste/" class="btn btn-primary mt-2">Annuler</a>
 
 </form>
 
