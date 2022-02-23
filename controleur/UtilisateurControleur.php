@@ -3,6 +3,7 @@
 namespace controleur;
 
 use Conf;
+use modele\DroitModele;
 use modele\UtilisateurModele;
 use PDOperso;
 
@@ -119,14 +120,14 @@ class UtilisateurControleur extends BaseControleur
         $this->afficherVue($parametres, 'inscription');
     }
 
-    //edition utilisateur
+    //---- edition utilisateur ----
     public function edition($id)
     {
         if (isset($_SESSION['droit']) && ($_SESSION['droit'] == "admin")) {
 
             $connexion = new PDOperso();
 
-            //l'utilisateur a validé le formulaire
+            //---- l'utilisateur a validé le formulaire ----
             if (isset($_POST['valider'])) {
 
                 $requete = $connexion->prepare(
@@ -142,25 +143,13 @@ class UtilisateurControleur extends BaseControleur
                 ]);
             }
 
-            //recuperation des droits
-            $requete = $connexion->prepare(
-                "SELECT * 
-                FROM droit"
-            );
+            //---- recuperation des droits ----
+            $listeDroit = DroitModele::findAll();
 
-            $requete->execute();
-            $listeDroit = $requete->fetchAll();
+            //---- recuperation de l'utilisateur ----
+            $utilisateur = UtilisateurModele::findById($id);
 
-            //recuperation de l'utilisateur
-            $requete = $connexion->prepare(
-                "SELECT *
-                FROM utilisateur
-                WHERE id = ?"
-            );
-
-            $requete->execute([$id]);
-            $utilisateur = $requete->fetch();
-
+            //$parametres['listeDroit'] = $listeDroit;
             $parametres = compact('utilisateur', 'listeDroit');
 
             $this->afficherVue($parametres, 'edition');
@@ -169,14 +158,13 @@ class UtilisateurControleur extends BaseControleur
         }
     }
 
-    //supprimer utilisateur
+    //---- supprimer utilisateur ----
     public function supprimer($id)
     {
         if (isset($_SESSION['droit']) && ($_SESSION['droit'] == "admin")) {
 
             UtilisateurModele::deleteById($id);
       
-
             header('Location: ' . \Conf::URL . 'utilisateur/liste/');
         } else {
             header('Location: ' . \Conf::URL);

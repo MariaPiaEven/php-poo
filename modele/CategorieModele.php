@@ -2,24 +2,9 @@
 
 namespace modele;
 
-use PDOperso;
-
-class CategorieModele{
+class CategorieModele extends BaseModele
+{
 
     //Eviter pour ecrire la requete chaque fois
-    public static function findAll(){
-
-        $connexion = new PDOperso();
-        $requete = $connexion->prepare(
-            "SELECT *
-             FROM categorie"
-        );
-        
-        $requete->execute();
-
-        return $requete->fetchAll(); 
-    }
-
+ 
 }
-
-?>

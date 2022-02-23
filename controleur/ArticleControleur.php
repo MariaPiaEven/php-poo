@@ -5,26 +5,17 @@ namespace controleur;
 
 use PDOperso;
 use Conf;
+use modele\ArticleModele;
+use modele\CategorieArticleModele;
 use modele\CategorieModele;
 
 class ArticleControleur extends BaseControleur
 {
     public function liste()
     {
-        $connexion = new \PDOperso();
+       $listeArticle = ArticleModele::findAllJoinUtilisateur();
 
-        //etoile ce pour recuperer tous les colonnes de la bdd
-        $requete = $connexion->prepare(
-            "SELECT article.id as id, titre, contenu, date_publication, nom_image, pseudo, id_utilisateur
-            FROM article
-            LEFT JOIN utilisateur ON utilisateur.id = article.id_utilisateur"
-        );
-
-        $requete->execute();
-
-        $listeArticle = $requete->fetchAll(); //fetch ce pour lire les resultats de PDO (php data objet) pour acceder a la base de donnes
-
-        $parametres = compact('listeArticle');
+       $parametres = compact('listeArticle');
 
         //  $this->afficherVue($listeArticle);
         $this->afficherVue($parametres);
@@ -32,34 +23,15 @@ class ArticleControleur extends BaseControleur
 
     public function afficher($id)
     {
-        include("bdd.php");
-
-        $requete = $connexion->prepare(
-            "SELECT article.id as id, titre, contenu, date_publication,nom_image, pseudo
-             FROM article
-             JOIN utilisateur ON utilisateur.id = article.id_utilisateur
-             WHERE article.id = ?"
-        );
-        //  echo "<h1>Affichage d'un article $id</h1>";
-
-        $requete->execute([$id]);
-
-        $article = $requete->fetch();
+        $article = ArticleModele::findAllJoinUtilisateur();
 
         if ($article) {
 
+            echo CategorieArticleModele::getNomTable();
+            die();
+
             // On recupère toutes les categories de cet article
-            $requete = $connexion->prepare(
-                "SELECT * 
-                FROM categorie_article 
-                JOIN categorie ON categorie.id = categorie_article.id_categorie
-                WHERE id_article = ?
-            "
-            );
-
-            $requete->execute([$id]);
-
-            $listeCategorie = $requete->fetchAll();
+            $listeCategorie = CategorieArticleModele::findByIdArticleJoinCategorie($id);
 
             // include('vue/afficher.php');
             $parametres = compact('article', 'listeCategorie');
@@ -84,9 +56,7 @@ class ArticleControleur extends BaseControleur
                 //Si l'utilisateur a validé le formulaire
                 if (isset($_POST['valider'])) {
 
-                    $requete = $connexion->prepare("SELECT * FROM article WHERE titre = ?");
-                    $requete->execute([$_POST['titre']]);
-                    $doublon = $requete->fetch();
+                    $doublon = ArticleModele::findByTitre($_POST['titre']);
 
                     if (!$doublon) {
 
@@ -103,26 +73,16 @@ class ArticleControleur extends BaseControleur
                             move_uploaded_file($nomTemporaire, "./assets/images/" . $nouveauNom);
                         }
 
-                        $requete = $connexion->prepare(
-                            "INSERT INTO article (titre,contenu,nom_image,id_utilisateur)
-                            VALUES (?,?,?,?)"
-                        );
-
-                        $requete->execute([
+                        $idArticle = ArticleModele::createArticle(
                             $_POST['titre'],
                             $_POST['contenu'],
                             $nouveauNom,
                             $_SESSION['id']
-                        ]);
-
-                        $idArticle = $connexion->lastInsertId();
+                        );
 
                         foreach ($_POST['categorie'] as $idCategorie) {
-                            $requete = $connexion->prepare(
-                                "INSERT INTO categorie_article (id_article,id_categorie) VALUES (?,?)"
-                            );
-
-                            $requete->execute([$idArticle, $idCategorie]);
+                            
+                            CategorieArticleModele::create($idArticle, $idCategorie);
                         }
 
                         header('Location: ' . \Conf::URL . 'article/liste');
@@ -140,28 +100,22 @@ class ArticleControleur extends BaseControleur
 
     public function supprimer($parametre)
     {
+        //si l'utilisateur est connecté
         if (isset($_SESSION["id"])) {
 
-            $connexion = new PDOperso();
-
-            $requete = $connexion->prepare("SELECT * FROM article WHERE id= ?");
-
-            $requete->execute([$parametre]);
-
-            $article = $requete->fetch();
-
+            $article = ArticleModele::findById($parametre);
+            
+            //si il est administrateur ou il es l'auteur de l'article
             if ($_SESSION['droit'] == 'admin' || $_SESSION['id'] == $article["id_utilisateur"]) {
 
-                include 'bdd.php';
-
-                $supprimer = $connexion->prepare('DELETE FROM article WHERE id = ?');
-
-                $supprimer->execute([$parametre]);
+                ArticleModele::deleteById($parametre);
 
                 header('Location: ' . \Conf::URL . 'article/liste');
             } else {
                 header('Location: ' . \Conf::URL);
             }
+        }else{
+            header('Location: ' . \Conf::URL);
         }
     }
 
@@ -173,25 +127,16 @@ class ArticleControleur extends BaseControleur
             $connexion = new PDOperso();
 
             //on recupere l'article a modifier
-            $requete = $connexion->prepare('SELECT * FROM article WHERE id = ?');
-            $requete->execute([$id]);
-            $article = $requete->fetch();
+            $article = ArticleModele::findById($id);
 
             //on recupere les categories de l'article
-            $requete = $connexion->prepare(
-                "SELECT * 
-                FROM categorie_article
-                WHERE id_article = ?"
-            );
-            $requete->execute([$id]);
-            $listeCategorieArticle = $requete->fetchAll();
+            $listeCategorieArticle = CategorieArticleModele::findByIdArticle($id);
 
             $listeIdCategorieArticle = [];
 
             foreach ($listeCategorieArticle as $categorieArticle) {
                 array_push($listeIdCategorieArticle, $categorieArticle['id_categorie']);
             }
-
 
             //on recupere la liste des categories
             $requete = $connexion->prepare("SELECT * FROM categorie");
@@ -206,15 +151,8 @@ class ArticleControleur extends BaseControleur
 
                 //si il validé le formulaire ou si il supprime l'image
                 if (isset($_POST['valider']) || isset($_POST['suppression_image'])) {
-                    $requete = $connexion->prepare(
-                        "SELECT * 
-                        FROM article 
-                        WHERE titre = ?
-                        AND id != ?"
-                    );
-
-                    $requete->execute([$_POST['titre'], $id]);
-                    $doublon = $requete->fetch();
+                    
+                    $doublon = ArticleModele::findDoublon($_POST['titre'],$id);
 
                     //si le titre n'existe pas dejà
                     if (!$doublon) {
@@ -232,53 +170,21 @@ class ArticleControleur extends BaseControleur
                                 move_uploaded_file($nomTemporaire, "./assets/images/" . $nouveauNom);
                             }
 
-                            if ($nouveauNom == null) {
-
-
-                                $requete = $connexion->prepare(
-                                    'UPDATE article 
-                                    SET titre = :titre, 
-                                    contenu = :contenu
-                                    WHERE id = :id'
-                                );
-
-                                $requete->execute([
-                                    ':titre' => $_POST['titre'],
-                                    ':contenu' => $_POST['contenu'], 
-                                    ':id' => $id
-                                ]);
-
-                            } else {
-                                $requete = $connexion->prepare(
-                                        'UPDATE article 
-                                        SET titre = :titre, 
-                                        contenu = :contenu,
-                                        nom_image = :nom_image
-                                        WHERE id = :id'
-                                );
-
-                                $requete->execute([
-                                    ':titre' => $_POST['titre'],
-                                    ':contenu' => $_POST['contenu'],
-                                    ':nom_image' => $nouveauNom,
-                                    ':id' => $id
-                                ]);
-                            }
+                            ArticleModele::updateArticle(
+                                $id, 
+                                $_POST["titre"],
+                                $_POST["contenu"],
+                                $nouveauNom
+                             );
 
                             header('Location: ' . Conf::URL . 'article/afficher/' . $id);
                         } else if (isset($_POST['suppression_image'])) {
 
-                            $connexion = new PDOperso();
-
-                            $requete = $connexion->prepare(
-                                'UPDATE article SET titre = :titre, contenu = :contenu, nom_image = NULL WHERE id = :id'
-                            );
-
-                            $requete->execute([
-                                ':titre' => $_POST['titre'],
-                                ':contenu' => $_POST['contenu'],
-                                ':id' => $id
-                            ]);
+                            ArticleModele::updateArticle(
+                                $id, 
+                                $_POST["titre"],
+                                $_POST["contenu"]
+                             );
 
                             header('Location: ' . Conf::URL . 'article/edition/' . $id);
                         }
@@ -287,21 +193,11 @@ class ArticleControleur extends BaseControleur
                     }
 
                     //on efface toutes les categories de cet article
-                    $requete = $connexion->prepare(
-                        "DELETE
-                        FROM categorie_article
-                        WHERE id_article = ?"
-                    );
-
-                    $requete->execute([$id]);
+                    CategorieArticleModele::deleteByIdArticle($id);
 
                     //enregistrer les categories
                     foreach ($_POST['categorie'] as $idCategorie) {
-                        $requete = $connexion->prepare(
-                            "INSERT INTO categorie_article (id_article,id_categorie) VALUES (?,?)"
-                        );
-
-                        $requete->execute([$id, $idCategorie]);
+                        CategorieArticleModele::create($id, $idCategorie);
                     }
                 }
 
