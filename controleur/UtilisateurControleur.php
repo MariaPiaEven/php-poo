@@ -12,23 +12,13 @@ class UtilisateurControleur extends BaseControleur
 
     public function liste()
     {
-
         //if(isset($_SESSION['droit'])&& in_array($_SESSION['droit'],["administrateur","redacteur"]))
         if (
             isset($_SESSION['droit'])
             && ($_SESSION['droit'] == "admin" || $_SESSION['droit'] == "redacteur")
         ) {
 
-            $connexion = new \PDOperso();
-
-            $requete = $connexion->prepare(
-                "SELECT utilisateur.id as id, pseudo, denomination
-             FROM utilisateur
-             LEFT JOIN droit ON utilisateur.id_droit = droit.id
-             "
-            );
-            $requete->execute();
-            $listeUtilisateur = $requete->fetchAll();
+            $listeUtilisateur = UtilisateurModele::findAllJoinDroit();
 
             $parametres = compact('listeUtilisateur');
 
@@ -41,26 +31,12 @@ class UtilisateurControleur extends BaseControleur
 
     public function connexion()
     {
-
         $erreurPseudo = false;
 
         //si l'utilisateur valide la connexion
         if (isset($_POST['valider'])) {
 
-            $connexion = new PDOperso();
-
-            $requete = $connexion->prepare(
-                "SELECT utilisateur.id , pseudo , mot_de_passe , denomination
-                FROM utilisateur 
-                LEFT JOIN droit ON droit.id = utilisateur.id_droit
-                WHERE pseudo = ?"
-            );
-
-            $requete->execute([
-                $_POST['pseudo']
-            ]);
-            // on récupére l'utilisateur ayant le pseudo saisi
-            $utilisateur = $requete->fetch();
+            $utilisateur = UtilisateurModele::findByPseudoJoinDroit($_POST['pseudo']);
 
             //si l'utilisateur existe bien
             if ($utilisateur) {
@@ -101,15 +77,9 @@ class UtilisateurControleur extends BaseControleur
                 $erreurMotdePasseIdentique = true;
             } else {
 
-                $connexion = new PDOperso();
-                $requete = $connexion->prepare(
-                    'INSERT INTO utilisateur (pseudo, mot_de_passe) VALUES (?,?)'
-                );
-
-                $requete->execute([
+                UtilisateurModele::create(
                     $_POST['pseudo'],
-                    password_hash($_POST['mot_de_passe'], PASSWORD_BCRYPT)
-                ]);
+                    password_hash($_POST['mot_de_passe'], PASSWORD_BCRYPT));
 
                 header("Location: " . Conf::URL . "utilisateur/connexion");
             }
@@ -130,17 +100,11 @@ class UtilisateurControleur extends BaseControleur
             //---- l'utilisateur a validé le formulaire ----
             if (isset($_POST['valider'])) {
 
-                $requete = $connexion->prepare(
-                    "UPDATE utilisateur
-                    SET pseudo = ? , id_droit = ?
-                    WHERE id = ?"
-                );
-
-                $requete->execute([
+                UtilisateurModele::update(
                     $_POST['pseudo'],
                     $_POST['droit'] == "" ? null : $_POST['droit'], //opérateur (ternaire) conditionnel 
                     $id
-                ]);
+                );
             }
 
             //---- recuperation des droits ----

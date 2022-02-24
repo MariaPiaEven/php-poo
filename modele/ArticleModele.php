@@ -116,6 +116,28 @@ class ArticleModele extends BaseModele {
 
         return $requete->fetch();
     }
+
+    public static function recherche($mot){
+
+        $connexion = new PDOperso();
+
+        $requete = $connexion->prepare(
+            "SELECT article.id as id, titre, contenu, date_publication,nom_image, pseudo
+            FROM article 
+            LEFT JOIN utilisateur ON utilisateur.id = article.id_utilisateur
+            WHERE titre LIKE :recherche 
+            OR contenu LIKE :recherche
+            OR pseudo LIKE :recherche
+            "
+        );
+
+        
+
+        $requete->execute([':recherche' => '%' . $mot . '%']);
+
+        return $requete->fetchAll();
+
+    }
 }
 
 ?>

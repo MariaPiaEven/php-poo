@@ -219,23 +219,11 @@ class ArticleControleur extends BaseControleur
 
     public function recherche($mot)
     {
-        $connexion = new PDOperso();
+        $listeArticle = ArticleModele::recherche($mot);
 
-        $requete = $connexion->prepare(
-            "SELECT article.id as id, titre, contenu, date_publication,nom_image, pseudo, admin
-            FROM article 
-            JOIN utilisateur ON utilisateur.id = article.id_utilisateur
-            WHERE titre LIKE :recherche 
-            OR contenu LIKE :recherche
-            OR pseudo LIKe :recherche
-            "
-        );
+        $estUneRecherche = true;
 
-        $requete->execute([':recherche' => '%' . $mot . '%']);
-
-        $listeArticle = $requete->fetchAll();
-
-        $parametres = compact('listeArticle');
+        $parametres = compact('listeArticle', 'estUneRecherche');
 
         $this->afficherVue($parametres);
     }

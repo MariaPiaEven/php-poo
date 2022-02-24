@@ -1,7 +1,6 @@
 
 <div class="container">
-  <div class="d-flex justify-content-center">
-  
+ 
   <?php
     if(isset($_SESSION['droit'])) {
 
@@ -13,13 +12,19 @@
   <?php
     }
   }
-  ?>
 
-  </div>
+
+  if(count($listeArticle) == 0 && isset($estUneRecherche) && $estUneRecherche){
+  ?>
+    <h1>Aucun article ne correspond à votre recherche</h1>
+
+  <?php    
+    }else{
+  ?>
 
 <div class="row">
 <?php
-foreach($listeArticle as $article){
+  foreach($listeArticle as $article){
 ?>
 
 <div class="col-6">
@@ -62,8 +67,13 @@ foreach($listeArticle as $article){
   </div>
 </div>
 
-<?php
-}
-?>
+  <?php
+  }
+  ?>
 </div>
+  <?php
+  }
+  ?>
 </div>
+
+  
