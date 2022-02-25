@@ -7,8 +7,8 @@ class Personne
 
     public function __construct($nom, $prenom)
     {
-        $this->setNom=$nom;
-        $this->prenom=$prenom;
+        $this->setNom($nom);
+        $this->setPrenom($prenom);
     }
     
     // function nomComplet() 

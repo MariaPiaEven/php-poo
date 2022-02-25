@@ -37,7 +37,7 @@ if(isset($partiesChemin[2]) && $partiesChemin[2] !=""){
     $parametre = null;
 }
 
-// Si la classe et sa methode existe
+// Si la classe et sa methode existe !=inverse
 if(!method_exists($nomControleur, $nomAction)){
 
     $nomControleur="controleur\\PageControleur";
@@ -45,7 +45,6 @@ if(!method_exists($nomControleur, $nomAction)){
 }
 
 $controleur = new $nomControleur();
-
 
 ?>
 

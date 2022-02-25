@@ -2,8 +2,6 @@
 
 class Autoloader{
 
-    public $adresse;
-
     static function start(){ 
                                 //nom de la classe et nom de la function
         spl_autoload_register(["Autoloader","autoload"]);

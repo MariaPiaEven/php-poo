@@ -16,6 +16,7 @@ class ArticleControleur extends BaseControleur
        $listeArticle = ArticleModele::findAllJoinUtilisateur();
 
        $parametres = compact('listeArticle');
+       //envoyer dans Basecontroleur en tant que function
 
         //  $this->afficherVue($listeArticle);
         $this->afficherVue($parametres);
