@@ -1,5 +1,6 @@
 
 <!-- System MVC Modèle-vue-contrôleur pour organiser les fichier -->
+<!-- La programmation orientée objet POO -->
 <?php
 
 session_start();
@@ -131,8 +132,10 @@ $controleur = new $nomControleur();
 </nav>
 
 <?php
+
  $controleur->$nomAction($parametre);
 ?>
+
 
 
 </body>

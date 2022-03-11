@@ -10,6 +10,7 @@ class BaseControleur {
 
         $dossier = strtolower(substr(get_class($this),11, -10));
 
+        // on va afficher le dossier vue
         include('vue/' . $dossier . '/'.$vue . '.php');
         // include('vue/liste.php');
     }
